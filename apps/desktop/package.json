@@ -1,0 +1,64 @@
+{
+  "name": "desktop",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "main.js",
+  "scripts": {
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3 -m ../backend",
+    "predev": "npm --prefix ../backend i && npm run rebuild:native",
+    "prebuild": "npm --prefix ../backend i && npm run rebuild:native",
+    "dev:renderer": "npm --prefix ../frontend run dev",
+    "dev:electron": "wait-on tcp:5173 && cross-env NODE_ENV=development VITE_DEV_SERVER_URL=http://localhost:5173 electron .",
+    "dev": "concurrently -k \"npm:dev:renderer\" \"npm:dev:electron\"",
+    "build:renderer": "npm --prefix ../frontend run build",
+    "build": "npm run build:renderer && electron-builder",
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.0.0",
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12",
+    "electron-rebuild": "^3.2.9",
+    "get-port": "^7.1.0",
+    "wait-on": "^8.0.4"
+  },
+  "build": {
+    "appId": "com.quiz.desktop",
+    "productName": "Quiz Desktop",
+    "files": [
+      "main.js",
+      "preload.js",
+      "../backend/**/*",
+      "../frontend/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/sqlite-data",
+        "to": "sqlite-data",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}

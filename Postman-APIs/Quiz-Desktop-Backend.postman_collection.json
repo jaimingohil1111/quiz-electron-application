@@ -1,0 +1,421 @@
+{
+    "info": {
+        "name": "Quiz Desktop Backend",
+        "_postman_id": "1f2b4f1b-8b3e-4b5a-a1fd-quizdesk",
+        "description": "Full offline MERN (Electron-ready) quiz backend: health, auth, users (admin), quizzes, questions, attempts.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "{{baseUrl}}"
+        },
+        {
+            "key": "accessToken",
+            "value": ""
+        },
+        {
+            "key": "refreshToken",
+            "value": ""
+        },
+        {
+            "key": "adminEmail",
+            "value": "{{adminEmail}}"
+        },
+        {
+            "key": "adminPassword",
+            "value": "{{adminPassword}}"
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// If an accessToken exists, apply it as the Authorization header by default (requests can override).",
+                    "if (pm.collectionVariables.get('accessToken')) {",
+                    "  pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + pm.collectionVariables.get('accessToken') });",
+                    "}"
+                ]
+            }
+        }
+    ],
+    "item": [
+        {
+            "name": "Health",
+            "item": [
+                {
+                    "name": "GET /health",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/health"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Auth",
+            "item": [
+                {
+                    "name": "POST /auth/signup (dev only)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/signup",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"user1@example.com\",\n  \"password\": \"StrongPass@123\",\n  \"role\": \"user\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /auth/login (admin)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/login",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                                    "const data = pm.response.json();",
+                                    "pm.collectionVariables.set('accessToken', data.accessToken || '');",
+                                    "pm.collectionVariables.set('refreshToken', data.refreshToken || '');",
+                                    "console.log('Tokens captured');"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "POST /auth/refresh",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/auth/refresh",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                                    "const data = pm.response.json();",
+                                    "if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Users (admin)",
+            "item": [
+                {
+                    "name": "GET /users (list)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/users?q=&role=&limit=20&offset=0",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users"
+                            ],
+                            "query": [
+                                {
+                                    "key": "q",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "role",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                },
+                                {
+                                    "key": "offset",
+                                    "value": "0"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "POST /users (create user)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\":\"Demo User\",\n  \"email\":\"demo.user@example.com\",\n  \"password\":\"StrongPass@123\",\n  \"role\":\"user\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /users/:id",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/users/2"
+                    }
+                },
+                {
+                    "name": "PUT /users/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users/2",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\":\"Demo User Updated\",\n  \"role\":\"user\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /users/set-password",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/users/set-password",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"userId\": 2,\n  \"newPassword\": \"NewStrong@123\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /users/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{baseUrl}}/users/2"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Quizzes",
+            "item": [
+                {
+                    "name": "GET /quizzes (published list)",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/quizzes"
+                    }
+                },
+                {
+                    "name": "GET /quizzes/:idOrSlug",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/quizzes/general-knowledge-demo"
+                    }
+                },
+                {
+                    "name": "POST /quizzes (admin create)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/quizzes",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Science Quiz\",\n  \"slug\": \"science-quiz\",\n  \"description\": \"Test science knowledge\",\n  \"category\": \"Science\",\n  \"difficulty\": \"Medium\",\n  \"tags\": [\"physics\",\"chemistry\"],\n  \"status\": \"draft\",\n  \"time_limit_sec\": 600\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /quizzes/:id (publish)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/quizzes/2",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"published\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /quizzes/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{baseUrl}}/quizzes/2"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Questions (admin)",
+            "item": [
+                {
+                    "name": "GET /questions/quiz/:quizId",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/questions/quiz/1"
+                    }
+                },
+                {
+                    "name": "POST /questions",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/questions",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"quiz_id\": 1,\n  \"type\": \"mcq\",\n  \"text\": \"Which planet is known as the Red Planet?\",\n  \"options\": [\"Mars\",\"Venus\",\"Jupiter\",\"Saturn\"],\n  \"correct\": [\"Mars\"],\n  \"explanation\": \"Iron oxide gives Mars its reddish hue.\",\n  \"tags\": [\"space\",\"planets\"],\n  \"difficulty\": \"Easy\",\n  \"position\": 3\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /questions/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/questions/3",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"text\": \"Which planet is called the Red Planet?\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /questions/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "url": "{{baseUrl}}/questions/3"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Attempts (user)",
+            "item": [
+                {
+                    "name": "GET /attempts (my attempts)",
+                    "request": {
+                        "method": "GET",
+                        "url": "{{baseUrl}}/attempts"
+                    }
+                },
+                {
+                    "name": "POST /attempts/start",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/attempts/start",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"quizId\": 1\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /attempts/answer (MCQ)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/attempts/answer",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"attemptId\": 1,\n  \"qId\": 1,\n  \"answer\": [\"Paris\"],\n  \"timeMs\": 12000,\n  \"flagged\": false\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /attempts/submit",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": "{{baseUrl}}/attempts/submit",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"attemptId\": 1\n}"
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}
